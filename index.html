@@ -1,0 +1,391 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PLAYBOX — Mini Game Arcade</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0c1020;color:white;font-family:system-ui,Arial;min-height:100vh}
+header{padding:17px 5%;display:flex;align-items:center;justify-content:space-between;background:#13182b;border-bottom:1px solid #292f49}
+.logo{font-weight:1000;font-size:25px;letter-spacing:-1px}.logo span{color:#65f5d0}
+.pill{background:#202943;padding:8px 12px;border-radius:20px;font-size:12px;color:#aebbd7}
+.hero{padding:35px 5% 25px;background:radial-gradient(ellipse at 80% 0%,#353071,transparent 60%)}
+.hero small{color:#65f5d0;font-weight:800;letter-spacing:3px}
+h1{font-size:clamp(37px,7vw,65px);line-height:1;margin:14px 0}
+.hero p{color:#aeb8d2;max-width:550px;line-height:1.6}
+main{padding:15px 5% 50px}
+.heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h2{margin:8px 0;font-size:23px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+button{font:inherit;cursor:pointer;border:0}
+.filter{background:#1a2035;color:#b7c2da;padding:9px 15px;border-radius:20px}
+.filter.active{background:#65f5d0;color:#10162a;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:17px}
+.card{background:#161c30;border:1px solid #2a324d;border-radius:17px;overflow:hidden;transition:.2s}
+.card:hover{transform:translateY(-3px);border-color:#65f5d0}
+.art{height:150px;display:grid;place-items:center;font-size:66px;position:relative;overflow:hidden}
+.art:after{content:"";position:absolute;inset:0;background:linear-gradient(transparent,rgba(5,8,20,.25))}
+.art span{z-index:1}
+.art small{position:absolute;z-index:2;top:10px;left:10px;font-size:10px;letter-spacing:1px;background:#10162bca;padding:5px 8px;border-radius:6px}
+.a1{background:linear-gradient(135deg,#214e66,#48bda9)}
+.a2{background:linear-gradient(135deg,#6338a1,#e36eb2)}
+.a3{background:linear-gradient(135deg,#83421c,#f2bd4d)}
+.a4{background:linear-gradient(135deg,#152d68,#617fff)}
+.a5{background:linear-gradient(135deg,#14553c,#6ce3a4)}
+.a6{background:linear-gradient(135deg,#612647,#f174a7)}
+.details{padding:15px}
+.details h3{margin:0 0 5px;font-size:18px}
+.details p{font-size:12px;color:#a5b0cc;min-height:34px;margin:0 0 13px;line-height:1.5}
+.play{width:100%;background:#29324c;color:white;border-radius:10px;padding:11px;font-weight:800}
+.play:hover{background:#65f5d0;color:#11182b}
+#screen{display:none;padding:15px 4% 35px}
+.back{background:#202943;color:white;border-radius:9px;padding:10px 14px}
+.gameHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+#gameName{font-weight:900;font-size:20px}
+#stage{width:100%;max-width:900px;margin:auto;background:#91d7e7;border-radius:15px;overflow:hidden;position:relative}
+canvas{display:block;width:100%;height:auto;touch-action:none}
+.instructions{text-align:center;color:#aab5ce;font-size:13px;margin:12px 0}
+.controls{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:13px 0}
+.control{background:#26304a;color:white;border:1px solid #414d6b;padding:13px 20px;border-radius:13px;font-weight:850;min-width:78px;touch-action:none;user-select:none}
+.control:active{background:#65f5d0;color:#10162a}
+#message{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;background:#0b102bd9;padding:20px}
+#message h2{font-size:32px}
+#message p{color:#d2d9eb}
+#message button{background:#65f5d0;color:#11182b;padding:12px 22px;border-radius:10px;font-weight:900}
+.note{font-size:12px;color:#7886a8;text-align:center;margin-top:25px}
+@media(max-width:500px){header{padding:14px 4%}.logo{font-size:21px}.hero{padding:28px 5%}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.art{height:105px;font-size:48px}.details{padding:10px}.details h3{font-size:15px}.details p{font-size:11px}.play{font-size:12px;padding:10px}main{padding-left:4%;padding-right:4%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">PLAY<span>BOX</span> 🎮</div>
+  <div class="pill">MINI GAME ARCADE</div>
+</header>
+
+<section class="hero" id="welcome">
+  <small>YOUR NEXT GAME IS HERE</small>
+  <h1>JUST PLAY.<br><span style="color:#65f5d0">NO LIMITS.</span></h1>
+  <p>Drive crazy tracks, swing across dangerous gaps, jump over obstacles and chase high scores. Pick a game and play right here.</p>
+</section>
+
+<main id="lobby">
+  <div class="heading"><h2>🔥 Choose your game</h2><span class="pill" id="total">6 games</span></div>
+  <div class="filters">
+    <button class="filter active" data-cat="All">All</button>
+    <button class="filter" data-cat="Driving">Driving</button>
+    <button class="filter" data-cat="Physics">Physics</button>
+    <button class="filter" data-cat="Arcade">Arcade</button>
+    <button class="filter" data-cat="Puzzle">Puzzle</button>
+  </div>
+  <div class="grid" id="games"></div>
+  <p class="note">PLAYBOX · Original browser mini-games · Works without external game files</p>
+</main>
+
+<section id="screen">
+  <div class="gameHead">
+    <button class="back" onclick="backHome()">← All games</button>
+    <div id="gameName">Game</div>
+    <button class="back" onclick="restart()">↻ Restart</button>
+  </div>
+  <div id="stage">
+    <canvas id="c" width="900" height="500"></canvas>
+    <div id="message"><div><h2 id="msgTitle">Game over</h2><p id="msgText"></p><button onclick="restart()">PLAY AGAIN ↻</button></div></div>
+  </div>
+  <div class="instructions" id="instructions"></div>
+  <div class="controls" id="controls"></div>
+</section>
+
+<script>
+const catalog=[
+ {id:'drive',name:'Crazy Car Climb',cat:'Driving',emoji:'🏎️',art:'a1',desc:'Climb hills, cross bridges and avoid flipping your car.'},
+ {id:'swing',name:'Sky Swing',cat:'Physics',emoji:'🪢',art:'a2',desc:'Swing from hooks and fly across giant gaps.'},
+ {id:'jump',name:'Neon Jumper',cat:'Arcade',emoji:'🏃',art:'a4',desc:'Jump over obstacles and see how far you can run.'},
+ {id:'bounce',name:'Bounce Quest',cat:'Arcade',emoji:'🟣',art:'a5',desc:'Bounce between platforms without falling.'},
+ {id:'stack',name:'Perfect Stack',cat:'Puzzle',emoji:'🧱',art:'a3',desc:'Drop moving blocks and build the tallest tower.'},
+ {id:'dodge',name:'Meteor Dodge',cat:'Arcade',emoji:'☄️',art:'a6',desc:'Dodge falling meteors for as long as you can.'}
+];
+const grid=document.querySelector('#games');
+let category='All';
+function render(){
+ let list=catalog.filter(g=>category==='All'||g.cat===category);
+ grid.innerHTML=list.map(g=>`<article class="card"><div class="art ${g.art}"><small>${g.cat.toUpperCase()}</small><span>${g.emoji}</span></div><div class="details"><h3>${g.name}</h3><p>${g.desc}</p><button class="play" onclick="launch('${g.id}')">▶ PLAY NOW</button></div></article>`).join('');
+ document.querySelector('#total').textContent=list.length+' games';
+}
+document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{
+ category=b.dataset.cat;
+ document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===b));
+ render();
+});
+render();
+
+const canvas=document.querySelector('#c'),ctx=canvas.getContext('2d');
+let game='',running=false,raf=0,last=0,keys={},score=0,world={},buttons={};
+const W=900,H=500;
+function button(label,action){
+ let b=document.createElement('button');b.className='control';b.textContent=label;
+ b.onpointerdown=e=>{e.preventDefault();action()};
+ document.querySelector('#controls').appendChild(b);
+ return b;
+}
+function launch(id){
+ document.querySelector('#lobby').style.display='none';
+ document.querySelector('#welcome').style.display='none';
+ document.querySelector('#screen').style.display='block';
+ game=id;
+ document.querySelector('#gameName').textContent=catalog.find(g=>g.id===id).name;
+ document.querySelector('#message').style.display='none';
+ document.querySelector('#controls').innerHTML='';
+ if(id==='drive'){
+  document.querySelector('#instructions').textContent='Hold GAS to accelerate. Use BRAKE to slow down. Keyboard: ← → or A / D.';
+  button('◀ LEAN',()=>world.car.angle-=.15);
+  button('GAS ▲',()=>world.gas=true);
+  button('BRAKE ▼',()=>world.brake=true);
+  button('LEAN ▶',()=>world.car.angle+=.15);
+ }else if(id==='swing'){
+  document.querySelector('#instructions').textContent='Hold GRAB near a hook to attach. Release to fly. Move with ← → or A / D.';
+  button('GRAB / RELEASE',()=>swingGrab());
+  button('← MOVE',()=>keys.ArrowLeft=true);
+  button('MOVE →',()=>keys.ArrowRight=true);
+ }else if(id==='jump'){
+  document.querySelector('#instructions').textContent='Tap JUMP or press SPACE to jump over barriers.';
+  button('JUMP ⤴',()=>jump());
+ }else if(id==='bounce'){
+  document.querySelector('#instructions').textContent='Use ← → or tap the controls to steer. Land on platforms.';
+  button('◀ LEFT',()=>world.player.x-=30);
+  button('RIGHT ▶',()=>world.player.x+=30);
+ }else if(id==='stack'){
+  document.querySelector('#instructions').textContent='Tap DROP or press SPACE when the moving block lines up.';
+  button('DROP BLOCK',()=>dropBlock());
+ }else{
+  document.querySelector('#instructions').textContent='Move left and right to dodge the falling meteors.';
+  button('◀ LEFT',()=>world.player.x-=35);
+  button('RIGHT ▶',()=>world.player.x+=35);
+ }
+ restart();
+}
+function backHome(){
+ running=false;cancelAnimationFrame(raf);game='';
+ document.querySelector('#screen').style.display='none';
+ document.querySelector('#welcome').style.display='block';
+ document.querySelector('#lobby').style.display='block';
+}
+function restart(){
+ cancelAnimationFrame(raf);running=true;last=0;score=0;
+ document.querySelector('#message').style.display='none';
+ if(game==='drive'){
+  world={distance:0,gas:false,brake:false,car:{x:150,y:0,vx:0,vy:0,angle:0,spin:0}};
+ }else if(game==='swing'){
+  world={camera:0,player:{x:80,y:280,vx:2,vy:0,r:13,hook:-1,rope:0},hooks:[{x:170,y:110},{x:380,y:100},{x:600,y:135},{x:820,y:100}],ground:420};
+ }else if(game==='jump'){
+  world={x:100,y:365,vy:0,ground:380,obstacles:[],distance:0,wait:40};
+ }else if(game==='bounce'){
+  world={camera:0,player:{x:450,y:260,vx:0,vy:0},platforms:[]};
+  for(let i=0;i<12;i++)world.platforms.push({x:i*115,y:350-(i%3)*45,w:90});
+ }else if(game==='stack'){
+  world={blocks:[{x:320,y:420,w:260,h:28}],moving:{x:100,y:385,w:260,h:28,dir:1},speed:3,level:1};
+ }else if(game==='dodge'){
+  world={player:{x:450,y:420},meteors:[],timer:0};
+ }
+ requestAnimationFrame(loop);
+}
+function loop(t){
+ if(!running)return;
+ let dt=Math.min((t-last||16)/16,2);last=t;
+ ctx.clearRect(0,0,W,H);
+ if(game==='drive')drawDrive(dt);
+ if(game==='swing')drawSwing(dt);
+ if(game==='jump')drawJump(dt);
+ if(game==='bounce')drawBounce(dt);
+ if(game==='stack')drawStack(dt);
+ if(game==='dodge')drawDodge(dt);
+ if(running)raf=requestAnimationFrame(loop);
+}
+function end(title,text){
+ running=false;
+ document.querySelector('#msgTitle').textContent=title;
+ document.querySelector('#msgText').textContent=text;
+ document.querySelector('#message').style.display='flex';
+}
+function sky(){
+ let g=ctx.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,'#7cd5f0');g.addColorStop(1,'#e0f6ec');
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+function hud(text){
+ ctx.fillStyle='#14213b';ctx.font='bold 22px system-ui';ctx.fillText(text,22,35);
+}
+function drawDrive(dt){
+ sky();
+ let d=world.distance;
+ // hills and track
+ ctx.fillStyle='#76c982';ctx.beginPath();ctx.moveTo(0,350);
+ for(let x=0;x<=W;x+=5)ctx.lineTo(x,350+35*Math.sin((x+d)*.008)+18*Math.sin((x+d)*.02));
+ ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
+ ctx.fillStyle='#4a5565';ctx.beginPath();ctx.moveTo(0,365);
+ for(let x=0;x<=W;x+=5)ctx.lineTo(x,365+35*Math.sin((x+d)*.008)+18*Math.sin((x+d)*.02));
+ ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
+ let c=world.car;
+ if(keys.ArrowRight||keys.KeyD||world.gas)c.vx+=.09*dt;
+ if(keys.ArrowLeft||keys.KeyA||world.brake)c.vx-=.08*dt;
+ if(!world.gas)c.vx*=.995;
+ c.vx=Math.max(-2,Math.min(6,c.vx));d+=c.vx*dt;world.distance=d;
+ let roadY=365+35*Math.sin((c.x+d)*.008)+18*Math.sin((c.x+d)*.02);
+ c.y=roadY-30;
+ c.angle=Math.atan((35*.008*Math.cos((c.x+d)*.008)+18*.02*Math.cos((c.x+d)*.02)));
+ ctx.save();ctx.translate(250,c.y);ctx.rotate(c.angle);
+ ctx.fillStyle='#f6ca4b';ctx.fillRect(-37,-20,74,23);
+ ctx.fillStyle='#e34f58';ctx.fillRect(-20,-33,38,16);
+ ctx.fillStyle='#d7f7ff';ctx.fillRect(-13,-30,18,10);
+ ctx.fillStyle='#20283d';ctx.beginPath();ctx.arc(-23,5,10,0,7);ctx.arc(24,5,10,0,7);ctx.fill();
+ ctx.fillStyle='#aab6c6';ctx.beginPath();ctx.arc(-23,5,4,0,7);ctx.arc(24,5,4,0,7);ctx.fill();
+ ctx.restore();
+ c.x=250;
+ hud('DISTANCE: '+Math.max(0,Math.floor(d/10))+' m');
+ if(d>9000)end('TRACK COMPLETE!','You conquered the crazy car course!');
+}
+function swingGrab(){
+ if(!running||game!=='swing')return;
+ let p=world.player;
+ if(p.hook>=0){p.hook=-1;return}
+ let best=-1,dist=145;
+ world.hooks.forEach((h,i)=>{let dd=Math.hypot(h.x-p.x,h.y-p.y);if(dd<dist){dist=dd;best=i}});
+ if(best>=0){p.hook=best;p.rope=Math.hypot(world.hooks[best].x-p.x,world.hooks[best].y-p.y)}
+}
+function drawSwing(dt){
+ sky();let p=world.player;
+ if(keys.ArrowRight||keys.KeyD)p.vx+=.12*dt;
+ if(keys.ArrowLeft||keys.KeyA)p.vx-=.12*dt;
+ p.vx=Math.max(-5,Math.min(5,p.vx));
+ p.vy+=.19*dt;
+ p.x+=p.vx*dt;p.y+=p.vy*dt;
+ if(p.hook>=0){
+  let h=world.hooks[p.hook],dx=p.x-h.x,dy=p.y-h.y,len=Math.hypot(dx,dy)||1;
+  p.x=h.x+dx/len*p.rope;p.y=h.y+dy/len*p.rope;
+  let radial=(p.vx*dx+p.vy*dy)/(len*len);
+  p.vx-=radial*dx;p.vy-=radial*dy;
+  ctx.strokeStyle='#fdf5c7';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(h.x,h.y);ctx.lineTo(p.x,p.y);ctx.stroke();
+ }
+ ctx.fillStyle='#b4a5f9';
+ world.hooks.forEach(h=>{ctx.beginPath();ctx.arc(h.x,h.y,9,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(h.x,h.y,3,0,7);ctx.fill();ctx.fillStyle='#b4a5f9'});
+ ctx.fillStyle='#387d8a';ctx.fillRect(0,world.ground,W,H-world.ground);
+ ctx.fillStyle='#252d43';ctx.fillRect(0,world.ground+8,W,H-world.ground);
+ ctx.fillStyle='#ff6c9a';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(p.x+4,p.y-3,3,0,7);ctx.fill();
+ world.camera=Math.max(0,p.x-250);
+ // World scrolling
+ if(world.camera>0){
+  ctx.save();ctx.translate(-world.camera,0);
+  ctx.fillStyle='#b4a5f9';
+  world.hooks.forEach(h=>{ctx.beginPath();ctx.arc(h.x,h.y,9,0,7);ctx.fill()});
+  if(p.hook>=0){let h=world.hooks[p.hook];ctx.strokeStyle='#fff';ctx.beginPath();ctx.moveTo(h.x,h.y);ctx.lineTo(p.x,p.y);ctx.stroke()}
+  ctx.restore();
+ }
+ // redraw player in camera view
+ ctx.fillStyle='#ff6c9a';ctx.beginPath();ctx.arc(p.x-world.camera,p.y,p.r,0,7);ctx.fill();
+ hud('DISTANCE: '+Math.max(0,Math.floor(p.x/10))+' m');
+ if(p.y>world.ground-5)end('OOPS!','You fell. Try grabbing a hook closer to you.');
+ if(p.x>1000)end('YOU MADE IT!','You crossed the swinging course!');
+}
+function jump(){
+ if(game==='jump'&&running&&world.y>=world.ground-1)world.vy=-10;
+}
+function drawJump(dt){
+ sky();world.distance+=4*dt;
+ let x=world.x,y=world.y;
+ world.y+=world.vy*dt;world.vy+=.48*dt;
+ if(world.y>world.ground){world.y=world.ground;world.vy=0}
+ if(--world.wait<=0){world.obstacles.push({x:W+20,w:25+Math.random()*25,h:25+Math.random()*35});world.wait=55+Math.random()*45}
+ ctx.fillStyle='#5eac76';ctx.fillRect(0,world.ground+22,W,H-world.ground);
+ ctx.fillStyle='#202c49';ctx.fillRect(0,world.ground+22,W,6);
+ ctx.fillStyle='#fcdf61';ctx.fillRect(x,world.y-34,30,34);
+ ctx.fillStyle='#202c49';ctx.fillRect(x+18,world.y-25,5,5);
+ world.obstacles.forEach(o=>{o.x-=5*dt;ctx.fillStyle='#ef648a';ctx.fillRect(o.x,world.ground-o.h+22,o.w,o.h);
+ if(x+25>o.x&&x<o.x+o.w&&world.y>world.ground-o.h+15)end('CRASH!','You ran '+Math.floor(world.distance/10)+' metres.')});
+ world.obstacles=world.obstacles.filter(o=>o.x>-60);
+ hud('DISTANCE: '+Math.floor(world.distance/10)+' m');
+}
+function drawBounce(dt){
+ sky();let p=world.player;
+ p.vy+=.25*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.94;
+ if(keys.ArrowLeft||keys.KeyA)p.vx-=.2*dt;
+ if(keys.ArrowRight||keys.KeyD)p.vx+=.2*dt;
+ p.x=Math.max(12,Math.min(W-12,p.x));
+ world.platforms.forEach(pl=>{
+  pl.x-=1.8*dt;
+  ctx.fillStyle='#42bd9b';ctx.fillRect(pl.x,pl.y,pl.w,13);
+  if(p.vy>0&&p.x>pl.x-10&&p.x<pl.x+pl.w+10&&p.y+12>=pl.y&&p.y+12<pl.y+18){p.y=pl.y-12;p.vy=-7;score++}
+  if(pl.x+pl.w<0){pl.x=W+Math.random()*100;pl.y=260+Math.random()*120}
+ });
+ ctx.fillStyle='#a18cff';ctx.beginPath();ctx.arc(p.x,p.y,13,0,7);ctx.fill();
+ hud('BOUNCES: '+score);
+ if(p.y>H)end('FELL OFF!','You landed '+score+' times. Try again!');
+}
+function dropBlock(){
+ if(game!=='stack'||!running)return;
+ let b=world.blocks[world.blocks.length-1],m=world.moving;
+ let left=Math.max(b.x,m.x),right=Math.min(b.x+b.w,m.x+m.w),overlap=right-left;
+ if(overlap<=0){end('MISSED!','Your tower reached '+world.level+' blocks.');return}
+ world.blocks.push({x:left,y:m.y,w:overlap,h:28});
+ world.level++;score++;
+ if(overlap<30){end('TOWER COMPLETE!','You stacked '+score+' blocks!');return}
+ world.moving={x:Math.random()<.5?0:W-overlap,y:m.y-35,w:overlap,h:28,dir:m.x< W/2?1:-1};
+ world.speed+=.25;
+}
+function drawStack(dt){
+ sky();ctx.fillStyle='#6cc69b';ctx.fillRect(0,440,W,60);
+ let m=world.moving;m.x+=m.dir*world.speed*dt;
+ if(m.x<0){m.x=0;m.dir=1}if(m.x+m.w>W){m.x=W-m.w;m.dir=-1}
+ world.blocks.forEach((b,i)=>{
+  ctx.fillStyle=`hsl(${180+i*23%160},65%,55%)`;ctx.fillRect(b.x,b.y,b.w,b.h);
+  ctx.fillStyle='#ffffff45';ctx.fillRect(b.x,b.y,b.w,4);
+ });
+ ctx.fillStyle='#ffc96a';ctx.fillRect(m.x,m.y,m.w,m.h);
+ hud('BLOCKS: '+score);
+ if(world.blocks.length>9){world.blocks.forEach(b=>b.y+=.5*dt);m.y+=.5*dt}
+}
+function drawDodge(dt){
+ sky();world.timer+=dt;
+ let p=world.player;
+ if(keys.ArrowLeft||keys.KeyA)p.x-=5*dt;
+ if(keys.ArrowRight||keys.KeyD)p.x+=5*dt;
+ p.x=Math.max(20,Math.min(W-20,p.x));
+ if(Math.random()<.035*dt)world.meteors.push({x:20+Math.random()*(W-40),y:-20,r:10+Math.random()*13,v:2+Math.random()*3});
+ world.meteors.forEach(m=>{
+  m.y+=m.v*dt;
+  ctx.fillStyle='#ff7798';ctx.beginPath();ctx.arc(m.x,m.y,m.r,0,7);ctx.fill();
+  ctx.fillStyle='#ffd4dc';ctx.beginPath();ctx.arc(m.x-3,m.y-4,3,0,7);ctx.fill();
+  if(Math.hypot(m.x-p.x,m.y-420)<m.r+14)end('METEOR HIT!','You survived '+Math.floor(world.timer/60)+' seconds.');
+ });
+ world.meteors=world.meteors.filter(m=>m.y<H+20);
+ ctx.fillStyle='#a18cff';ctx.fillRect(p.x-13,407,26,28);
+ ctx.fillStyle='#fff';ctx.fillRect(p.x-5,412,5,5);
+ hud('TIME: '+Math.floor(world.timer/60)+' s');
+}
+window.addEventListener('keydown',e=>{
+ keys[e.code]=true;
+ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();
+ if(e.code==='Space'){if(game==='jump')jump();if(game==='stack')dropBlock()}
+ if(e.code==='KeyE'&&game==='swing')swingGrab();
+});
+window.addEventListener('keyup',e=>{
+ keys[e.code]=false;
+ if(e.code==='KeyD'||e.code==='ArrowRight')world.gas=false;
+ if(e.code==='KeyA'||e.code==='ArrowLeft')world.brake=false;
+});
+window.addEventListener('pointerup',()=>{
+ world.gas=false;world.brake=false;
+ keys.ArrowLeft=false;keys.ArrowRight=false;
+});
+canvas.addEventListener('pointerdown',e=>{
+ const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width;
+ if(game==='jump')jump();
+ if(game==='stack')dropBlock();
+ if(game==='drive'){if(x>W/2)world.gas=true;else world.brake=true}
+ if(game==='swing')swingGrab();
+ if(game==='dodge'||game==='bounce')world.player.x=x;
+});
+</script>
+</body>
+</html>
